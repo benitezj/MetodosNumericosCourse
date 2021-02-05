@@ -7,7 +7,7 @@ void example2(){
   FGaussian.SetParameter(1,1);//mean
   FGaussian.SetParameter(2,0.1);//sigma
 
-  for(int i=0;i<100;i++){
+  for(int i=0;i<1000;i++){
     std::cout<<FGaussian.GetRandom()<<std::endl;
   }
   
