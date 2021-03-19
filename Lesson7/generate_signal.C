@@ -1,5 +1,5 @@
 
-float H_mass = 125;
+float H_mass = 125;//GeV
 
 float EtaFromTheta(float theta){ return -log(tan(theta/2));}
 float ThetaFromEta(float eta){ return 2*atan(exp(-eta));}
@@ -17,7 +17,7 @@ bool det_accept(float rap){
 
 void generate_signal(int N=100){
 
-  bool apply_efficiency = 0;
+  bool apply_efficiency = 1;
 
   //signal model (Higgs production)
   TF1 FHiggs_theta("FHiggs_theta","1",0,TMath::Pi()); 
@@ -30,8 +30,8 @@ void generate_signal(int N=100){
 
   //Detector
   TF1 FDetector_eff("FDetector_eff","1",0,1);//this will be used to apply detector efficiency
-  TF1 FDetector_e_res("FDetector_e_res","exp(-0.5*(x-1)^2/(0.1*0.1))",0.5,1.5);//10% energy resolution
-  TF1 FDetector_rap_res("FDetector_rap_res","exp(-0.5*x*x/(0.05*0.05))",-0.4,0.4);//+/- 0.05 resolution on the rapidity (angle) 
+  TF1 FDetector_e_res("FDetector_e_res","exp(-0.5*(x-1)^2/(0.1*0.1))",0.5,1.5);//10% relative energy resolution
+  TF1 FDetector_angle_res("FDetector_angle_res","exp(-0.5*x*x/(0.05*0.05))",-0.4,0.4);//+/- 0.05 absolute resolution on angle
 
   
   //data file
@@ -97,10 +97,22 @@ void generate_signal(int N=100){
     //step 2: detector resolution
     float ph1_e_res = FDetector_e_res.GetRandom();
     float ph2_e_res = FDetector_e_res.GetRandom();
-    float ph1_rap_res = FDetector_rap_res.GetRandom();
-    float ph2_rap_res = FDetector_rap_res.GetRandom();
+    float ph1_theta_res = FDetector_angle_res.GetRandom();
+    float ph2_theta_res = FDetector_angle_res.GetRandom();
+    float ph1_phi_res = FDetector_angle_res.GetRandom();
+    float ph2_phi_res = FDetector_angle_res.GetRandom();
 
-    
+    TLorentzVector Photon1_p4_reco;
+    Photon1_p4_reco.SetPx((Photon1_p4.E()*ph1_e_res) * sin(Photon1_p4.Theta() + ph1_theta_res) * cos(Photon1_p4.Phi() + ph1_phi_res));
+    Photon1_p4_reco.SetPx((Photon1_p4.E()*ph1_e_res) * sin(Photon1_p4.Theta() + ph1_theta_res) * sin(Photon1_p4.Phi() + ph1_phi_res));
+    Photon1_p4_reco.SetPz((Photon1_p4.E()*ph1_e_res) * cos(Photon1_p4.Theta() + ph1_theta_res));
+    Photon1_p4_reco.SetE(Photon1_p4.E()*ph1_e_res);    
+
+    TLorentzVector Photon2_p4_reco;
+    Photon2_p4_reco.SetPx((Photon2_p4.E()*ph2_e_res) * sin(Photon2_p4.Theta() + ph2_theta_res) * cos(Photon2_p4.Phi() + ph2_phi_res));
+    Photon2_p4_reco.SetPx((Photon2_p4.E()*ph2_e_res) * sin(Photon2_p4.Theta() + ph2_theta_res) * sin(Photon2_p4.Phi() + ph2_phi_res));
+    Photon2_p4_reco.SetPz((Photon2_p4.E()*ph2_e_res) * cos(Photon2_p4.Theta() + ph2_theta_res));
+    Photon2_p4_reco.SetE(Photon2_p4.E()*ph2_e_res);    
 
     
     //////////////////////////////
@@ -108,19 +120,19 @@ void generate_signal(int N=100){
     ////////////////////////////
     
     //// Save to data file
-    of<<Higgs_p4.Pt()<<" "<<Higgs_p4.Eta();
+    of<<Higgs_p4.Px()<<" "<<Higgs_p4.Py()<<" "<<Higgs_p4.Pz()<<" "<<Higgs_p4.E();
 
+    //Because photons are identical particles we must not be able to identify ph1 vs ph2, therefore save using momentum ordering instead
     if(Photon1_p4.Pt()>Photon2_p4.Pt()){
-      //Because photons are identical particles we must not be able to identify ph1 vs ph2, therefore save using momentum ordering instead
-      of<<" "<<Photon1_p4.Pt()<<" "<<Photon1_p4.Eta()
-	<<" "<<Photon2_p4.Pt()<<" "<<Photon2_p4.Eta()
-	<<" "<<Photon1_p4.Pt()*ph1_e_res<<" "<<(Photon1_p4.Eta()+ph1_rap_res)
-	<<" "<<Photon2_p4.Pt()*ph2_e_res<<" "<<(Photon2_p4.Eta()+ph2_rap_res);
+      of<<" "<<Photon1_p4.Px()<<" "<<Photon1_p4.Py()<<" "<<Photon1_p4.Pz()
+	<<" "<<Photon2_p4.Px()<<" "<<Photon2_p4.Py()<<" "<<Photon2_p4.Pz()
+	<<" "<<Photon1_p4_reco.Px()<<" "<<Photon1_p4_reco.Py()<<" "<<Photon1_p4_reco.Pz()
+	<<" "<<Photon2_p4_reco.Px()<<" "<<Photon2_p4_reco.Py()<<" "<<Photon2_p4_reco.Pz();
     }else{
-      of<<" "<<Photon2_p4.Pt()<<" "<<Photon2_p4.Eta()
-	<<" "<<Photon1_p4.Pt()<<" "<<Photon1_p4.Eta()
-	<<" "<<Photon2_p4.Pt()*ph2_e_res<<" "<<(Photon2_p4.Eta()+ph2_rap_res)
-	<<" "<<Photon1_p4.Pt()*ph1_e_res<<" "<<(Photon1_p4.Eta()+ph1_rap_res);	
+      of<<" "<<Photon2_p4.Px()<<" "<<Photon2_p4.Py()<<" "<<Photon2_p4.Pz()
+	<<" "<<Photon1_p4.Px()<<" "<<Photon1_p4.Py()<<" "<<Photon1_p4.Pz()
+	<<" "<<Photon2_p4_reco.Px()<<" "<<Photon2_p4_reco.Py()<<" "<<Photon2_p4_reco.Pz()
+	<<" "<<Photon1_p4_reco.Px()<<" "<<Photon1_p4_reco.Py()<<" "<<Photon1_p4_reco.Pz();
     }
     of<<std::endl;
     
