@@ -1,5 +1,8 @@
 #include "generate_signal.h"
 
+
+TH1F HNPho("HNPho","",3,-0.5,2.5);
+
 TLorentzVector generate_higgs();
 void decay_higgs(TLorentzVector & Higgs_p4, TLorentzVector & Photon1_p4, TLorentzVector & Photon2_p4);
 bool detector_efficiency(float ph1_eta, float ph2_eta);
@@ -87,6 +90,17 @@ void generate_signal_TTree(int N=100){
   OFile.ls();
   OFile.Close();
   delete tree;
+
+  gStyle->SetOptStat(0);
+  TCanvas C;
+  C.Clear();
+  HNPho.GetXaxis()->SetTitle("# of photons in detector acceptance");
+  HNPho.SetMarkerStyle(8);
+  HNPho.SetMarkerSize(1);
+  HNPho.Draw("histtext");
+  C.Print("generation_signal_NPho.png");
+  cout<<HNPho.GetBinContent(1)<<" "<<HNPho.GetBinContent(2)<<" "<<HNPho.GetBinContent(3)<<" "<<endl;
+  
 }
 
 
@@ -131,9 +145,16 @@ void decay_higgs(TLorentzVector & Higgs_p4, TLorentzVector & Photon1_p4, TLorent
 
 bool detector_efficiency(float ph1_eta, float ph2_eta){
    bool pass=1;
+
+   int npass=0;
    //// detector acceptance, 
    if(!det_accept(ph1_eta)) pass=0;
+   if(pass)npass++;
+   
    if(!det_accept(ph2_eta)) pass=0;
+   if(pass) npass++;
+
+   HNPho.Fill(npass);//fill number detected photons
    
    //// detector efficiency
    //step 1: detection efficiency, not all photons will be detected by the sensor and electronics, apply 95% sensor efficiency

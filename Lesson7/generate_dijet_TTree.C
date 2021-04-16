@@ -1,5 +1,6 @@
 #include "generate_signal_TTree.C"
 
+
 //signal model (Higgs production)
 TF1 FGluon_theta("FGluon_theta","1",0,TMath::Pi());
 TF1 FGluon_phi("FGluon_phi","1",0,2*TMath::Pi());
@@ -93,6 +94,18 @@ void generate_dijet_TTree(int N=100){
   OFile.ls();
   OFile.Close();
   delete tree;
+
+
+  gStyle->SetOptStat(0);
+  TCanvas C;
+  C.Clear();
+  HNPho.GetXaxis()->SetTitle("# of photons in detector acceptance");
+  HNPho.SetMarkerStyle(8);
+  HNPho.SetMarkerSize(1);
+  HNPho.Draw("histtext");
+  C.Print("generation_dijet_NPho.png");
+  cout<<HNPho.GetBinContent(1)<<" "<<HNPho.GetBinContent(2)<<" "<<HNPho.GetBinContent(3)<<" "<<endl;
+  
 }
 
 
