@@ -34,6 +34,11 @@ void plot_reconstruction(){
   HHiggs_reco_m_dijet->Draw("histsame");
   C.Print("HHiggs_reco_m_scaled_added.png");
   
-  
+
+  TFile OutputF("signal_plus_dijet.root","recreate");
+  HHiggs_reco_m_signal->SetName("signal_plus_dijet");
+  HHiggs_reco_m_signal->Write();
+  OutputF.ls();
+  OutputF.Close();
 
 }
